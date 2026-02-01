@@ -228,21 +228,21 @@ const ChessBoard = memo(function ChessBoard({
                   onContextMenu={(e) => handleContextMenu(e, rowIdx, colIdx)}
                 >
                   {/* Depth 2 overlay (dashed border) */}
-                  {depth2Count > 0 && (
+                  {depth2Attackers > 0 && (
                     <div 
                       className="depth-overlay depth-2"
                       style={{
-                        backgroundColor: distinctMode ? 'transparent' : `${HEAT_COLORS[Math.min(depth2Count, 4)]}80`,
+                        backgroundColor: distinctMode ? 'transparent' : `${HEAT_COLORS[Math.min(depth2Attackers, 4)]}80`,
                       }}
                     />
                   )}
                   
                   {/* Depth 3 overlay (dotted border) */}
-                  {depth3Count > 0 && (
+                  {depth3Attackers > 0 && (
                     <div 
                       className="depth-overlay depth-3"
                       style={{
-                        backgroundColor: distinctMode ? 'transparent' : `${HEAT_COLORS[Math.min(depth3Count, 4)]}40`,
+                        backgroundColor: distinctMode ? 'transparent' : `${HEAT_COLORS[Math.min(depth3Attackers, 4)]}40`,
                       }}
                     />
                   )}

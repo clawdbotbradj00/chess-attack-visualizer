@@ -1,9 +1,14 @@
 import { memo } from 'react'
-import { getPieceSymbol, PIECE_COLORS, HEAT_COLORS } from '../utils/pieceLogic'
+import { getPieceSymbol, PIECE_COLORS, HEAT_COLORS, pieceColorMap } from '../utils/pieceLogic'
 import './ChessBoard.css'
 
 const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 const ranks = ['8', '7', '6', '5', '4', '3', '2', '1']
+
+// Helper to check if attacker is black (for styling)
+function isBlackPiece(idx) {
+  return pieceColorMap.get(idx) === 'black'
+}
 
 // Component to render the attack indicator with color segments (distinct mode)
 function AttackIndicator({ attackers }) {
@@ -12,14 +17,26 @@ function AttackIndicator({ attackers }) {
   const size = 20 // Size of the indicator square
   const colors = attackers.map(idx => PIECE_COLORS[idx % PIECE_COLORS.length])
   
+  // Check if any attackers are black - apply desaturation and opacity
+  const hasBlackAttacker = attackers.some(idx => isBlackPiece(idx))
+  const allBlack = attackers.every(idx => isBlackPiece(idx))
+  
+  const style = {
+    width: size,
+    height: size,
+    ...(allBlack && { 
+      opacity: 0.3, 
+      filter: 'saturate(0.3)' 
+    })
+  }
+  
   if (colors.length === 1) {
     // Single attacker - solid color
     return (
       <div 
         className="attack-indicator"
         style={{
-          width: size,
-          height: size,
+          ...style,
           backgroundColor: colors[0],
         }}
       />
@@ -32,8 +49,7 @@ function AttackIndicator({ attackers }) {
       <div 
         className="attack-indicator"
         style={{
-          width: size,
-          height: size,
+          ...style,
           background: `linear-gradient(135deg, ${colors[0]} 50%, ${colors[1]} 50%)`,
         }}
       />
@@ -51,8 +67,7 @@ function AttackIndicator({ attackers }) {
     <div 
       className="attack-indicator"
       style={{
-        width: size,
-        height: size,
+        ...style,
         background: `conic-gradient(${segments})`,
         borderRadius: '2px',
       }}

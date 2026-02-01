@@ -40,6 +40,9 @@ export const PIECE_COLORS = [
   '#f97316', // orange
 ]
 
+// Track piece colors (white/black) by pieceIndex
+export const pieceColorMap = new Map()
+
 // Heat map colors - darker = more attackers
 export const HEAT_COLORS = [
   '#4a1a24', // 0 attackers (won't be used)
@@ -197,6 +200,9 @@ function getSlidingAttacks(row, col, directions, board = null) {
 // Returns an 8x8 array where each cell contains:
 // { attackers: [pieceIndex...], defenders: [pieceIndex...] }
 export function calculateAllAttacks(board) {
+  // Clear and rebuild piece color map
+  pieceColorMap.clear()
+  
   // Initialize attacks as objects with attackers and defenders
   const attacks = Array(8).fill(null).map(() => 
     Array(8).fill(null).map(() => ({ attackers: [], defenders: [] }))
@@ -209,6 +215,7 @@ export function calculateAllAttacks(board) {
       if (!piece) continue
       
       const idx = piece.pieceIndex ?? 0
+      pieceColorMap.set(idx, piece.color)
       
       // Get all squares this piece attacks (passing board for blocking calculation)
       const attackedSquares = getAttackedSquares(piece, row, col, board)
@@ -233,6 +240,9 @@ export function calculateAllAttacks(board) {
 // Calculate attacks with depth (secondary, tertiary coverage)
 // depth 1 = current, depth 2 = if pieces moved to attack squares, etc.
 export function calculateAttacksWithDepth(board, maxDepth = 1) {
+  // Clear and rebuild piece color map
+  pieceColorMap.clear()
+  
   // Initialize: each cell contains depths with attackers/defenders
   const attacks = Array(8).fill(null).map(() => 
     Array(8).fill(null).map(() => ({
@@ -248,7 +258,9 @@ export function calculateAttacksWithDepth(board, maxDepth = 1) {
     for (let col = 0; col < 8; col++) {
       const piece = board[row][col]
       if (piece) {
-        pieces.push({ piece, row, col, idx: piece.pieceIndex ?? 0 })
+        const idx = piece.pieceIndex ?? 0
+        pieceColorMap.set(idx, piece.color)
+        pieces.push({ piece, row, col, idx })
       }
     }
   }

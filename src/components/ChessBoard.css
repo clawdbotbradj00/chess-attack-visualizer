@@ -1,0 +1,225 @@
+.chess-board-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+}
+
+.file-labels {
+  display: flex;
+  gap: 0;
+}
+
+.file-labels .corner-spacer {
+  width: 24px;
+}
+
+.file-label {
+  width: 60px;
+  text-align: center;
+  font-weight: 600;
+  color: #64748b;
+  font-size: 14px;
+  padding: 4px 0;
+}
+
+.board-with-ranks {
+  display: flex;
+  align-items: stretch;
+}
+
+.rank-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+}
+
+.rank-label {
+  height: 60px;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.chess-board {
+  display: grid;
+  grid-template-columns: repeat(8, 60px);
+  grid-template-rows: repeat(8, 60px);
+  border: 3px solid #1e293b;
+  border-radius: 4px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.square {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+
+.square.light {
+  background-color: #f0d9b5;
+}
+
+.square.dark {
+  background-color: #b58863;
+}
+
+.square:hover {
+  outline: 2px solid rgba(59, 130, 246, 0.6);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.piece {
+  font-size: 48px;
+  cursor: grab;
+  transition: transform 0.1s ease;
+  line-height: 1;
+}
+
+.piece:active {
+  cursor: grabbing;
+  transform: scale(1.1);
+}
+
+.piece.white {
+  color: #ffffff;
+  text-shadow: 
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000,
+    0 0 3px rgba(0,0,0,0.5);
+}
+
+.piece.black {
+  color: #1a1a1a;
+  text-shadow: 
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
+}
+
+.attack-count {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Attack indicator - small colored square in center */
+.attack-indicator {
+  position: absolute;
+  border-radius: 2px;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  z-index: 1;
+}
+
+/* Depth overlays for secondary/tertiary coverage */
+.depth-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.depth-overlay.depth-2 {
+  border: 3px dashed rgba(255, 255, 255, 0.4);
+  box-sizing: border-box;
+}
+
+.depth-overlay.depth-3 {
+  border: 3px dotted rgba(255, 255, 255, 0.25);
+  box-sizing: border-box;
+}
+
+/* Depth indicator wrapper (for smaller indicators) */
+.depth-indicator {
+  opacity: 0.6;
+}
+
+.depth-2-indicator .attack-indicator {
+  width: 14px !important;
+  height: 14px !important;
+  opacity: 0.7;
+}
+
+/* Simple piece styling - no colored borders */
+.piece {
+  border: none;
+  padding: 0;
+  position: relative;
+}
+
+/* Small color indicator dot on each piece */
+.piece-color-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+/* Selected piece indicator */
+.piece.selected {
+  outline: 3px solid #22c55e;
+  outline-offset: -2px;
+  border-radius: 8px;
+  background: rgba(34, 197, 94, 0.2);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .chess-board {
+    grid-template-columns: repeat(8, 40px);
+    grid-template-rows: repeat(8, 40px);
+  }
+  
+  .square {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .piece {
+    font-size: 28px;
+  }
+  
+  .file-label {
+    width: 40px;
+    font-size: 12px;
+  }
+  
+  .rank-label {
+    height: 40px;
+    width: 20px;
+    font-size: 12px;
+  }
+  
+  .file-labels .corner-spacer {
+    width: 20px;
+  }
+}

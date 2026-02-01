@@ -198,7 +198,7 @@ function getSlidingAttacks(row, col, directions, board = null) {
 
 // Calculate all attacks from all pieces on the board
 // Returns an 8x8 array where each cell contains:
-// { attackers: [pieceIndex...], defenders: [pieceIndex...] }
+// { attackers: [{idx, color}...], defenders: [{idx, color}...] }
 export function calculateAllAttacks(board) {
   // Clear and rebuild piece color map
   pieceColorMap.clear()
@@ -220,15 +220,16 @@ export function calculateAllAttacks(board) {
       // Get all squares this piece attacks (passing board for blocking calculation)
       const attackedSquares = getAttackedSquares(piece, row, col, board)
       
-      // Add this piece's index to each attacked square
+      // Add this piece's info to each attacked square
       for (const [ar, ac] of attackedSquares) {
         const targetPiece = board[ar][ac]
+        const attackInfo = { idx, color: piece.color }
         if (targetPiece && targetPiece.color === piece.color) {
           // Same color = defending
-          attacks[ar][ac].defenders.push(idx)
+          attacks[ar][ac].defenders.push(attackInfo)
         } else {
           // Empty or enemy = attacking
-          attacks[ar][ac].attackers.push(idx)
+          attacks[ar][ac].attackers.push(attackInfo)
         }
       }
     }
@@ -270,18 +271,21 @@ export function calculateAttacksWithDepth(board, maxDepth = 1) {
     const attackedSquares = getAttackedSquares(piece, row, col, board)
     for (const [ar, ac] of attackedSquares) {
       const targetPiece = board[ar][ac]
+      const attackInfo = { idx, color: piece.color }
       if (targetPiece && targetPiece.color === piece.color) {
-        attacks[ar][ac].depth1.defenders.push(idx)
+        attacks[ar][ac].depth1.defenders.push(attackInfo)
       } else {
-        attacks[ar][ac].depth1.attackers.push(idx)
+        attacks[ar][ac].depth1.attackers.push(attackInfo)
       }
     }
   }
   
   if (maxDepth < 2) return attacks
   
+  // Helper to check if idx already in array of {idx, color} objects
+  const hasIdx = (arr, idx) => arr.some(a => a.idx === idx)
+  
   // Depth 2: If piece moves to any of its MOVE squares, what could it attack?
-  // For depth 2+, we just track as attackers (board state would change)
   for (const { piece, row, col, idx } of pieces) {
     const possibleMoves = getMoveSquares(piece, row, col, board)
     
@@ -291,9 +295,9 @@ export function calculateAttacksWithDepth(board, maxDepth = 1) {
       for (const [ar, ac] of futureAttacks) {
         const d1 = attacks[ar][ac].depth1
         const d2 = attacks[ar][ac].depth2
-        if (!d1.attackers.includes(idx) && !d1.defenders.includes(idx) &&
-            !d2.attackers.includes(idx)) {
-          d2.attackers.push(idx)
+        if (!hasIdx(d1.attackers, idx) && !hasIdx(d1.defenders, idx) &&
+            !hasIdx(d2.attackers, idx)) {
+          d2.attackers.push({ idx, color: piece.color })
         }
       }
     }
@@ -315,9 +319,9 @@ export function calculateAttacksWithDepth(board, maxDepth = 1) {
           const d1 = attacks[ar][ac].depth1
           const d2 = attacks[ar][ac].depth2
           const d3 = attacks[ar][ac].depth3
-          if (!d1.attackers.includes(idx) && !d1.defenders.includes(idx) &&
-              !d2.attackers.includes(idx) && !d3.attackers.includes(idx)) {
-            d3.attackers.push(idx)
+          if (!hasIdx(d1.attackers, idx) && !hasIdx(d1.defenders, idx) &&
+              !hasIdx(d2.attackers, idx) && !hasIdx(d3.attackers, idx)) {
+            d3.attackers.push({ idx, color: piece.color })
           }
         }
       }

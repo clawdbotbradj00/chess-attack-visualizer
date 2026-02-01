@@ -5,21 +5,16 @@ import './ChessBoard.css'
 const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 const ranks = ['8', '7', '6', '5', '4', '3', '2', '1']
 
-// Helper to check if attacker is black (for styling)
-function isBlackPiece(idx) {
-  return pieceColorMap.get(idx) === 'black'
-}
-
 // Component to render the attack indicator with color segments (distinct mode)
+// attackers is array of {idx, color} objects
 function AttackIndicator({ attackers }) {
   if (!attackers || attackers.length === 0) return null
   
   const size = 20 // Size of the indicator square
-  const colors = attackers.map(idx => PIECE_COLORS[idx % PIECE_COLORS.length])
+  const colors = attackers.map(a => PIECE_COLORS[a.idx % PIECE_COLORS.length])
   
-  // Check if any attackers are black - apply desaturation and opacity
-  const hasBlackAttacker = attackers.some(idx => isBlackPiece(idx))
-  const allBlack = attackers.every(idx => isBlackPiece(idx))
+  // Check if all attackers are black - apply desaturation and opacity
+  const allBlack = attackers.every(a => a.color === 'black')
   
   const style = {
     width: size,
@@ -147,10 +142,12 @@ const ChessBoard = memo(function ChessBoard({
   }
 
   // Filter by selection if enabled
-  const filterBySelection = (indices) => {
-    if (!selectedOnly) return indices
+  // items is array of {idx, color} objects
+  const filterBySelection = (items) => {
+    if (!items) return []
+    if (!selectedOnly) return items
     if (selectedPieces.size === 0) return []
-    return indices.filter(idx => selectedPieces.has(idx))
+    return items.filter(item => selectedPieces.has(item.idx))
   }
 
   // Get attackers and defenders for a square across depths
@@ -158,16 +155,17 @@ const ChessBoard = memo(function ChessBoard({
     const cell = attacks[rowIdx]?.[colIdx]
     if (!cell) return { attackers: [], defenders: [], byDepth: {} }
     
-    // Handle old array format (backwards compat)
+    // Handle old array format (backwards compat) - convert to new format
     if (Array.isArray(cell)) {
-      const filtered = filterBySelection(cell)
+      const filtered = cell.filter(idx => !selectedOnly || selectedPieces.size === 0 || selectedPieces.has(idx))
+        .map(idx => ({ idx, color: 'white' })) // assume white for old format
       return { attackers: filtered, defenders: [], byDepth: { 1: { attackers: filtered, defenders: [] } } }
     }
     
     // Handle new format with attackers/defenders (non-depth)
     if (cell.attackers && !cell.depth1) {
-      const attackers = filterBySelection(cell.attackers || [])
-      const defenders = filterBySelection(cell.defenders || [])
+      const attackers = filterBySelection(cell.attackers)
+      const defenders = filterBySelection(cell.defenders)
       return { attackers, defenders, byDepth: { 1: { attackers, defenders } } }
     }
     
@@ -177,19 +175,19 @@ const ChessBoard = memo(function ChessBoard({
     let allDefenders = []
     
     if (cell.depth1) {
-      const attackers = filterBySelection(cell.depth1.attackers || [])
-      const defenders = filterBySelection(cell.depth1.defenders || [])
+      const attackers = filterBySelection(cell.depth1.attackers)
+      const defenders = filterBySelection(cell.depth1.defenders)
       byDepth[1] = { attackers, defenders }
       allAttackers = [...allAttackers, ...attackers]
       allDefenders = [...allDefenders, ...defenders]
     }
     if (cell.depth2 && coverageDepth >= 2) {
-      const attackers = filterBySelection(cell.depth2.attackers || [])
+      const attackers = filterBySelection(cell.depth2.attackers)
       byDepth[2] = { attackers, defenders: [] }
       allAttackers = [...allAttackers, ...attackers]
     }
     if (cell.depth3 && coverageDepth >= 3) {
-      const attackers = filterBySelection(cell.depth3.attackers || [])
+      const attackers = filterBySelection(cell.depth3.attackers)
       byDepth[3] = { attackers, defenders: [] }
       allAttackers = [...allAttackers, ...attackers]
     }

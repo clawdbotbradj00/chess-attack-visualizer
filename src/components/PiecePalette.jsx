@@ -2,7 +2,14 @@ import { memo } from 'react'
 import { getPieceSymbol, PIECE_TYPES } from '../utils/pieceLogic'
 import './PiecePalette.css'
 
-const PiecePalette = memo(function PiecePalette({ onDragStart, onDragEnd }) {
+const PiecePalette = memo(function PiecePalette({ 
+  onDragStart, 
+  onDragEnd,
+  showBlackControl,
+  setShowBlackControl,
+  showWhiteControl,
+  setShowWhiteControl
+}) {
   const handleDragStart = (e, type, color) => {
     e.dataTransfer.effectAllowed = 'all'
     e.dataTransfer.setData('text/plain', JSON.stringify({ type, color }))
@@ -24,6 +31,14 @@ const PiecePalette = memo(function PiecePalette({ onDragStart, onDragEnd }) {
       
       <div className="palette-section">
         <h3>Black</h3>
+        <label className="control-toggle">
+          <input 
+            type="checkbox" 
+            checked={showBlackControl}
+            onChange={e => setShowBlackControl(e.target.checked)}
+          />
+          Show control
+        </label>
         <div className="palette-pieces">
           {pieces.map(({ type, name }) => (
             <div
@@ -42,6 +57,14 @@ const PiecePalette = memo(function PiecePalette({ onDragStart, onDragEnd }) {
 
       <div className="palette-section">
         <h3>White</h3>
+        <label className="control-toggle">
+          <input 
+            type="checkbox" 
+            checked={showWhiteControl}
+            onChange={e => setShowWhiteControl(e.target.checked)}
+          />
+          Show control
+        </label>
         <div className="palette-pieces">
           {pieces.map(({ type, name }) => (
             <div

@@ -96,7 +96,8 @@ const ChessBoard = memo(function ChessBoard({
   selectedOnly = false,
   selectedPieces = new Set(),
   lowContrast = false,
-  showSquareControl = true,
+  showWhiteControl = true,
+  showBlackControl = true,
   onDragStart, 
   onDrop, 
   onDragEnd,
@@ -253,18 +254,24 @@ const ChessBoard = memo(function ChessBoard({
               const rawBlackAttackers = rawAttackers.filter(a => a.color === 'black').length
               const isContested = rawWhiteAttackers > 0 && rawBlackAttackers > 0
               
-              // Check if all depth1 attackers are black
-              const allDepth1Black = depth1Attackers > 0 && depth1AttackersList.every(a => a.color === 'black')
+              // Filter attackers by color control settings
+              const visibleDepth1Attackers = depth1AttackersList.filter(a => 
+                (a.color === 'white' && showWhiteControl) || (a.color === 'black' && showBlackControl)
+              )
+              const visibleDepth1Count = visibleDepth1Attackers.length
               
-              // Heat map background color (only for depth 1 attackers in heat mode)
-              const heatBgColor = showSquareControl && !distinctMode && depth1Attackers > 0 
-                ? getHeatColor(depth1Attackers) 
+              // Heat map background color (only for visible attackers in heat mode)
+              const heatBgColor = !distinctMode && visibleDepth1Count > 0 
+                ? getHeatColor(visibleDepth1Count) 
                 : null
+              
+              // Check if all visible depth1 attackers are black (for styling)
+              const allVisibleBlack = visibleDepth1Count > 0 && visibleDepth1Attackers.every(a => a.color === 'black')
               
               // Style for square - apply opacity/desaturation for black pieces in heat mode
               const squareStyle = {
                 ...(heatBgColor && { backgroundColor: heatBgColor }),
-                ...(heatBgColor && allDepth1Black && {
+                ...(heatBgColor && allVisibleBlack && {
                   opacity: 0.3,
                   filter: 'saturate(0.3)'
                 }),
@@ -285,7 +292,7 @@ const ChessBoard = memo(function ChessBoard({
                   onContextMenu={(e) => handleContextMenu(e, rowIdx, colIdx)}
                 >
                   {/* Depth 2 overlay (dashed border) */}
-                  {showSquareControl && depth2Attackers > 0 && (
+                  {depth2Attackers > 0 && (
                     <div 
                       className="depth-overlay depth-2"
                       style={{
@@ -295,7 +302,7 @@ const ChessBoard = memo(function ChessBoard({
                   )}
                   
                   {/* Depth 3 overlay (dotted border) */}
-                  {showSquareControl && depth3Attackers > 0 && (
+                  {depth3Attackers > 0 && (
                     <div 
                       className="depth-overlay depth-3"
                       style={{
@@ -321,12 +328,12 @@ const ChessBoard = memo(function ChessBoard({
                   )}
                   
                   {/* Distinct mode: show colored indicator for attackers */}
-                  {showSquareControl && distinctMode && depth1Attackers > 0 && (
-                    <AttackIndicator attackers={byDepth[1]?.attackers} />
+                  {distinctMode && visibleDepth1Count > 0 && (
+                    <AttackIndicator attackers={visibleDepth1Attackers} />
                   )}
                   
                   {/* Depth 2 indicator (smaller, lighter) */}
-                  {showSquareControl && distinctMode && depth2Attackers > 0 && !depth1Attackers && (
+                  {distinctMode && depth2Attackers > 0 && !visibleDepth1Count && (
                     <div className="depth-indicator depth-2-indicator">
                       <AttackIndicator attackers={byDepth[2]?.attackers} />
                     </div>

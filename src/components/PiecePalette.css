@@ -25,10 +25,27 @@
 .palette-section h3 {
   color: #94a3b8;
   font-size: 13px;
-  margin: 0 0 10px 0;
+  margin: 0 0 6px 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 500;
+}
+
+.control-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.control-toggle input {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #3b82f6;
 }
 
 .palette-pieces {

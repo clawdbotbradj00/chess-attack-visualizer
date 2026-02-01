@@ -72,6 +72,15 @@
   background-color: #b58863;
 }
 
+/* Low contrast mode - grayscale board */
+.square.low-contrast.light {
+  background-color: #e0e0e0;
+}
+
+.square.low-contrast.dark {
+  background-color: #c0c0c0;
+}
+
 .square:hover {
   outline: 2px solid rgba(59, 130, 246, 0.6);
   outline-offset: -2px;

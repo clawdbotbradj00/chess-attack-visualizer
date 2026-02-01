@@ -85,6 +85,7 @@ const ChessBoard = memo(function ChessBoard({
   coverageDepth = 1,
   selectedOnly = false,
   selectedPieces = new Set(),
+  lowContrast = false,
   onDragStart, 
   onDrop, 
   onDragEnd,
@@ -210,7 +211,7 @@ const ChessBoard = memo(function ChessBoard({
               return (
                 <div
                   key={`${rowIdx}-${colIdx}`}
-                  className={`square ${isLight ? 'light' : 'dark'} ${piece ? 'has-piece' : ''} ${hasAttackers ? 'attacked' : ''}`}
+                  className={`square ${isLight ? 'light' : 'dark'} ${piece ? 'has-piece' : ''} ${hasAttackers ? 'attacked' : ''} ${lowContrast ? 'low-contrast' : ''}`}
                   style={heatBgColor ? { backgroundColor: heatBgColor } : undefined}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, rowIdx, colIdx)}

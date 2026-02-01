@@ -221,21 +221,34 @@ const ChessBoard = memo(function ChessBoard({
               const pieceColor = getPieceColor(piece)
               
               // For heat map mode
-              const depth1Attackers = byDepth[1]?.attackers?.length || 0
+              const depth1AttackersList = byDepth[1]?.attackers || []
+              const depth1Attackers = depth1AttackersList.length
               const depth2Attackers = byDepth[2]?.attackers?.length || 0
               const depth3Attackers = byDepth[3]?.attackers?.length || 0
               const totalAttackers = depth1Attackers + depth2Attackers + depth3Attackers
+              
+              // Check if all depth1 attackers are black
+              const allDepth1Black = depth1Attackers > 0 && depth1AttackersList.every(a => a.color === 'black')
               
               // Heat map background color (only for depth 1 attackers in heat mode)
               const heatBgColor = !distinctMode && depth1Attackers > 0 
                 ? getHeatColor(depth1Attackers) 
                 : null
               
+              // Style for square - apply opacity/desaturation for black pieces in heat mode
+              const squareStyle = heatBgColor ? {
+                backgroundColor: heatBgColor,
+                ...(allDepth1Black && {
+                  opacity: 0.3,
+                  filter: 'saturate(0.3)'
+                })
+              } : undefined
+              
               return (
                 <div
                   key={`${rowIdx}-${colIdx}`}
                   className={`square ${isLight ? 'light' : 'dark'} ${piece ? 'has-piece' : ''} ${hasAttackers ? 'attacked' : ''} ${lowContrast ? 'low-contrast' : ''}`}
-                  style={heatBgColor ? { backgroundColor: heatBgColor } : undefined}
+                  style={squareStyle}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, rowIdx, colIdx)}
                   onContextMenu={(e) => handleContextMenu(e, rowIdx, colIdx)}

@@ -96,6 +96,7 @@ const ChessBoard = memo(function ChessBoard({
   selectedOnly = false,
   selectedPieces = new Set(),
   lowContrast = false,
+  showContested = true,
   onDragStart, 
   onDrop, 
   onDragEnd,
@@ -250,7 +251,7 @@ const ChessBoard = memo(function ChessBoard({
               // Count white and black attackers from RAW (unfiltered) data for contested
               const rawWhiteAttackers = rawAttackers.filter(a => a.color === 'white').length
               const rawBlackAttackers = rawAttackers.filter(a => a.color === 'black').length
-              const isContested = rawWhiteAttackers > 0 && rawBlackAttackers > 0
+              const isContested = showContested && rawWhiteAttackers > 0 && rawBlackAttackers > 0
               
               // Check if all depth1 attackers are black
               const allDepth1Black = depth1Attackers > 0 && depth1AttackersList.every(a => a.color === 'black')

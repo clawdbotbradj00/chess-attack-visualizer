@@ -97,6 +97,7 @@ function App() {
   const [selectedOnly, setSelectedOnly] = useState(true)
   const [selectedPieces, setSelectedPieces] = useState(new Set())
   const [lowContrast, setLowContrast] = useState(false)
+  const [showContested, setShowContested] = useState(true)
 
   // Calculate attacks with depth support
   const attacks = coverageDepth > 1 
@@ -295,6 +296,7 @@ function App() {
             selectedOnly={selectedOnly}
             selectedPieces={selectedPieces}
             lowContrast={lowContrast}
+            showContested={showContested}
             onDragStart={handleDragStart}
             onDrop={handleDrop}
             onDragEnd={handleDragEnd}
@@ -340,6 +342,14 @@ function App() {
                 onChange={e => setLowContrast(e.target.checked)}
               />
               Low contrast board
+            </label>
+            <label className="toggle-label">
+              <input 
+                type="checkbox" 
+                checked={showContested}
+                onChange={e => setShowContested(e.target.checked)}
+              />
+              Show square control
             </label>
           </div>
           

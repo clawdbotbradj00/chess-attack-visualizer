@@ -96,7 +96,7 @@ const ChessBoard = memo(function ChessBoard({
   selectedOnly = false,
   selectedPieces = new Set(),
   lowContrast = false,
-  showContested = true,
+  showSquareControl = true,
   onDragStart, 
   onDrop, 
   onDragEnd,
@@ -251,13 +251,13 @@ const ChessBoard = memo(function ChessBoard({
               // Count white and black attackers from RAW (unfiltered) data for contested
               const rawWhiteAttackers = rawAttackers.filter(a => a.color === 'white').length
               const rawBlackAttackers = rawAttackers.filter(a => a.color === 'black').length
-              const isContested = showContested && rawWhiteAttackers > 0 && rawBlackAttackers > 0
+              const isContested = rawWhiteAttackers > 0 && rawBlackAttackers > 0
               
               // Check if all depth1 attackers are black
               const allDepth1Black = depth1Attackers > 0 && depth1AttackersList.every(a => a.color === 'black')
               
               // Heat map background color (only for depth 1 attackers in heat mode)
-              const heatBgColor = !distinctMode && depth1Attackers > 0 
+              const heatBgColor = showSquareControl && !distinctMode && depth1Attackers > 0 
                 ? getHeatColor(depth1Attackers) 
                 : null
               
@@ -285,7 +285,7 @@ const ChessBoard = memo(function ChessBoard({
                   onContextMenu={(e) => handleContextMenu(e, rowIdx, colIdx)}
                 >
                   {/* Depth 2 overlay (dashed border) */}
-                  {depth2Attackers > 0 && (
+                  {showSquareControl && depth2Attackers > 0 && (
                     <div 
                       className="depth-overlay depth-2"
                       style={{
@@ -295,7 +295,7 @@ const ChessBoard = memo(function ChessBoard({
                   )}
                   
                   {/* Depth 3 overlay (dotted border) */}
-                  {depth3Attackers > 0 && (
+                  {showSquareControl && depth3Attackers > 0 && (
                     <div 
                       className="depth-overlay depth-3"
                       style={{
@@ -321,12 +321,12 @@ const ChessBoard = memo(function ChessBoard({
                   )}
                   
                   {/* Distinct mode: show colored indicator for attackers */}
-                  {distinctMode && depth1Attackers > 0 && (
+                  {showSquareControl && distinctMode && depth1Attackers > 0 && (
                     <AttackIndicator attackers={byDepth[1]?.attackers} />
                   )}
                   
                   {/* Depth 2 indicator (smaller, lighter) */}
-                  {distinctMode && depth2Attackers > 0 && !depth1Attackers && (
+                  {showSquareControl && distinctMode && depth2Attackers > 0 && !depth1Attackers && (
                     <div className="depth-indicator depth-2-indicator">
                       <AttackIndicator attackers={byDepth[2]?.attackers} />
                     </div>

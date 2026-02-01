@@ -131,46 +131,55 @@ const ChessBoard = memo(function ChessBoard({
     return PIECE_COLORS[piece.pieceIndex % PIECE_COLORS.length]
   }
 
-  // Filter attackers by selection if selectedOnly is enabled
-  const filterBySelection = (attackers) => {
-    if (!selectedOnly) return attackers
-    // When selectedOnly is on but nothing selected, show nothing
+  // Filter by selection if enabled
+  const filterBySelection = (indices) => {
+    if (!selectedOnly) return indices
     if (selectedPieces.size === 0) return []
-    return attackers.filter(idx => selectedPieces.has(idx))
+    return indices.filter(idx => selectedPieces.has(idx))
   }
 
-  // Get all attackers across depths up to coverageDepth
-  const getAttackersForSquare = (rowIdx, colIdx) => {
+  // Get attackers and defenders for a square across depths
+  const getSquareInfo = (rowIdx, colIdx) => {
     const cell = attacks[rowIdx]?.[colIdx]
-    if (!cell) return { all: [], byDepth: {} }
+    if (!cell) return { attackers: [], defenders: [], byDepth: {} }
     
-    // If old format (just array), convert
+    // Handle old array format (backwards compat)
     if (Array.isArray(cell)) {
       const filtered = filterBySelection(cell)
-      return { all: filtered, byDepth: { 1: filtered } }
+      return { attackers: filtered, defenders: [], byDepth: { 1: { attackers: filtered, defenders: [] } } }
+    }
+    
+    // Handle new format with attackers/defenders (non-depth)
+    if (cell.attackers && !cell.depth1) {
+      const attackers = filterBySelection(cell.attackers || [])
+      const defenders = filterBySelection(cell.defenders || [])
+      return { attackers, defenders, byDepth: { 1: { attackers, defenders } } }
     }
     
     // New format with depth
     const byDepth = {}
-    let all = []
+    let allAttackers = []
+    let allDefenders = []
     
-    if (cell.depth1?.length > 0) {
-      const filtered = filterBySelection(cell.depth1)
-      byDepth[1] = filtered
-      all = [...all, ...filtered]
+    if (cell.depth1) {
+      const attackers = filterBySelection(cell.depth1.attackers || [])
+      const defenders = filterBySelection(cell.depth1.defenders || [])
+      byDepth[1] = { attackers, defenders }
+      allAttackers = [...allAttackers, ...attackers]
+      allDefenders = [...allDefenders, ...defenders]
     }
-    if (cell.depth2?.length > 0 && coverageDepth >= 2) {
-      const filtered = filterBySelection(cell.depth2)
-      byDepth[2] = filtered
-      all = [...all, ...filtered]
+    if (cell.depth2 && coverageDepth >= 2) {
+      const attackers = filterBySelection(cell.depth2.attackers || [])
+      byDepth[2] = { attackers, defenders: [] }
+      allAttackers = [...allAttackers, ...attackers]
     }
-    if (cell.depth3?.length > 0 && coverageDepth >= 3) {
-      const filtered = filterBySelection(cell.depth3)
-      byDepth[3] = filtered
-      all = [...all, ...filtered]
+    if (cell.depth3 && coverageDepth >= 3) {
+      const attackers = filterBySelection(cell.depth3.attackers || [])
+      byDepth[3] = { attackers, defenders: [] }
+      allAttackers = [...allAttackers, ...attackers]
     }
     
-    return { all, byDepth }
+    return { attackers: allAttackers, defenders: allDefenders, byDepth }
   }
 
   return (
@@ -193,19 +202,20 @@ const ChessBoard = memo(function ChessBoard({
           {board.map((row, rowIdx) => (
             row.map((piece, colIdx) => {
               const isLight = (rowIdx + colIdx) % 2 === 0
-              const { all: attackers, byDepth } = getAttackersForSquare(rowIdx, colIdx)
+              const { attackers, defenders, byDepth } = getSquareInfo(rowIdx, colIdx)
               const hasAttackers = attackers.length > 0
+              const hasDefenders = defenders.length > 0
               const pieceColor = getPieceColor(piece)
               
               // For heat map mode
-              const depth1Count = byDepth[1]?.length || 0
-              const depth2Count = byDepth[2]?.length || 0
-              const depth3Count = byDepth[3]?.length || 0
-              const totalCount = depth1Count + depth2Count + depth3Count
+              const depth1Attackers = byDepth[1]?.attackers?.length || 0
+              const depth2Attackers = byDepth[2]?.attackers?.length || 0
+              const depth3Attackers = byDepth[3]?.attackers?.length || 0
+              const totalAttackers = depth1Attackers + depth2Attackers + depth3Attackers
               
-              // Heat map background color (only for depth 1 in heat mode)
-              const heatBgColor = !distinctMode && depth1Count > 0 
-                ? getHeatColor(depth1Count) 
+              // Heat map background color (only for depth 1 attackers in heat mode)
+              const heatBgColor = !distinctMode && depth1Attackers > 0 
+                ? getHeatColor(depth1Attackers) 
                 : null
               
               return (
@@ -253,20 +263,28 @@ const ChessBoard = memo(function ChessBoard({
                     </div>
                   )}
                   
-                  {/* Distinct mode: show colored indicator */}
-                  {distinctMode && depth1Count > 0 && (
-                    <AttackIndicator attackers={byDepth[1]} />
+                  {/* Distinct mode: show colored indicator for attackers */}
+                  {distinctMode && depth1Attackers > 0 && (
+                    <AttackIndicator attackers={byDepth[1]?.attackers} />
                   )}
                   
                   {/* Depth 2 indicator (smaller, lighter) */}
-                  {distinctMode && depth2Count > 0 && !depth1Count && (
+                  {distinctMode && depth2Attackers > 0 && !depth1Attackers && (
                     <div className="depth-indicator depth-2-indicator">
-                      <AttackIndicator attackers={byDepth[2]} />
+                      <AttackIndicator attackers={byDepth[2]?.attackers} />
                     </div>
                   )}
                   
-                  {showAttackCounts && totalCount > 0 && (
-                    <div className="attack-count">{totalCount}</div>
+                  {/* Defender indicator - shield style */}
+                  {hasDefenders && (
+                    <div className="defender-indicator" title={`Defended ${defenders.length}x`}>
+                      🛡️
+                      {defenders.length > 1 && <span className="defender-count">{defenders.length}</span>}
+                    </div>
+                  )}
+                  
+                  {showAttackCounts && totalAttackers > 0 && (
+                    <div className="attack-count">{totalAttackers}</div>
                   )}
                 </div>
               )

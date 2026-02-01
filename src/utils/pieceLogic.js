@@ -194,11 +194,12 @@ function getSlidingAttacks(row, col, directions, board = null) {
 }
 
 // Calculate all attacks from all pieces on the board
-// Returns an 8x8 array where each cell contains array of attacker IDs (pieceIndex)
+// Returns an 8x8 array where each cell contains:
+// { attackers: [pieceIndex...], defenders: [pieceIndex...] }
 export function calculateAllAttacks(board) {
-  // Initialize attacks as empty arrays
+  // Initialize attacks as objects with attackers and defenders
   const attacks = Array(8).fill(null).map(() => 
-    Array(8).fill(null).map(() => [])
+    Array(8).fill(null).map(() => ({ attackers: [], defenders: [] }))
   )
   
   // Collect all pieces with their positions and assigned indices
@@ -214,7 +215,14 @@ export function calculateAllAttacks(board) {
       
       // Add this piece's index to each attacked square
       for (const [ar, ac] of attackedSquares) {
-        attacks[ar][ac].push(idx)
+        const targetPiece = board[ar][ac]
+        if (targetPiece && targetPiece.color === piece.color) {
+          // Same color = defending
+          attacks[ar][ac].defenders.push(idx)
+        } else {
+          // Empty or enemy = attacking
+          attacks[ar][ac].attackers.push(idx)
+        }
       }
     }
   }
@@ -225,12 +233,12 @@ export function calculateAllAttacks(board) {
 // Calculate attacks with depth (secondary, tertiary coverage)
 // depth 1 = current, depth 2 = if pieces moved to attack squares, etc.
 export function calculateAttacksWithDepth(board, maxDepth = 1) {
-  // Initialize: each cell contains { depth1: [], depth2: [], ... }
+  // Initialize: each cell contains depths with attackers/defenders
   const attacks = Array(8).fill(null).map(() => 
     Array(8).fill(null).map(() => ({
-      depth1: [],
-      depth2: [],
-      depth3: [],
+      depth1: { attackers: [], defenders: [] },
+      depth2: { attackers: [], defenders: [] },
+      depth3: { attackers: [], defenders: [] },
     }))
   )
   
@@ -249,26 +257,31 @@ export function calculateAttacksWithDepth(board, maxDepth = 1) {
   for (const { piece, row, col, idx } of pieces) {
     const attackedSquares = getAttackedSquares(piece, row, col, board)
     for (const [ar, ac] of attackedSquares) {
-      attacks[ar][ac].depth1.push(idx)
+      const targetPiece = board[ar][ac]
+      if (targetPiece && targetPiece.color === piece.color) {
+        attacks[ar][ac].depth1.defenders.push(idx)
+      } else {
+        attacks[ar][ac].depth1.attackers.push(idx)
+      }
     }
   }
   
   if (maxDepth < 2) return attacks
   
   // Depth 2: If piece moves to any of its MOVE squares, what could it attack?
-  // Use getMoveSquares for where piece can go, getAttackedSquares for what it attacks
+  // For depth 2+, we just track as attackers (board state would change)
   for (const { piece, row, col, idx } of pieces) {
     const possibleMoves = getMoveSquares(piece, row, col, board)
     
     for (const [moveRow, moveCol] of possibleMoves) {
-      // From this potential position, where could the piece attack?
       const futureAttacks = getAttackedSquares(piece, moveRow, moveCol)
       
       for (const [ar, ac] of futureAttacks) {
-        // Skip squares already in depth1 for this piece
-        if (!attacks[ar][ac].depth1.includes(idx) && 
-            !attacks[ar][ac].depth2.includes(idx)) {
-          attacks[ar][ac].depth2.push(idx)
+        const d1 = attacks[ar][ac].depth1
+        const d2 = attacks[ar][ac].depth2
+        if (!d1.attackers.includes(idx) && !d1.defenders.includes(idx) &&
+            !d2.attackers.includes(idx)) {
+          d2.attackers.push(idx)
         }
       }
     }
@@ -287,10 +300,12 @@ export function calculateAttacksWithDepth(board, maxDepth = 1) {
         const futureAttacks = getAttackedSquares(piece, moveRow2, moveCol2)
         
         for (const [ar, ac] of futureAttacks) {
-          if (!attacks[ar][ac].depth1.includes(idx) && 
-              !attacks[ar][ac].depth2.includes(idx) &&
-              !attacks[ar][ac].depth3.includes(idx)) {
-            attacks[ar][ac].depth3.push(idx)
+          const d1 = attacks[ar][ac].depth1
+          const d2 = attacks[ar][ac].depth2
+          const d3 = attacks[ar][ac].depth3
+          if (!d1.attackers.includes(idx) && !d1.defenders.includes(idx) &&
+              !d2.attackers.includes(idx) && !d3.attackers.includes(idx)) {
+            d3.attackers.push(idx)
           }
         }
       }

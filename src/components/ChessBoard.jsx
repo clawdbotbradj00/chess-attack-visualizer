@@ -227,6 +227,11 @@ const ChessBoard = memo(function ChessBoard({
               const depth3Attackers = byDepth[3]?.attackers?.length || 0
               const totalAttackers = depth1Attackers + depth2Attackers + depth3Attackers
               
+              // Count white and black attackers separately
+              const whiteAttackers = attackers.filter(a => a.color === 'white').length
+              const blackAttackers = attackers.filter(a => a.color === 'black').length
+              const isContested = whiteAttackers > 0 && blackAttackers > 0
+              
               // Check if all depth1 attackers are black
               const allDepth1Black = depth1Attackers > 0 && depth1AttackersList.every(a => a.color === 'black')
               
@@ -236,19 +241,24 @@ const ChessBoard = memo(function ChessBoard({
                 : null
               
               // Style for square - apply opacity/desaturation for black pieces in heat mode
-              const squareStyle = heatBgColor ? {
-                backgroundColor: heatBgColor,
-                ...(allDepth1Black && {
+              const squareStyle = {
+                ...(heatBgColor && { backgroundColor: heatBgColor }),
+                ...(heatBgColor && allDepth1Black && {
                   opacity: 0.3,
                   filter: 'saturate(0.3)'
+                }),
+                ...(isContested && {
+                  outline: '3px dashed #fbbf24',
+                  outlineOffset: '-3px'
                 })
-              } : undefined
+              }
+              const hasSquareStyle = heatBgColor || isContested
               
               return (
                 <div
                   key={`${rowIdx}-${colIdx}`}
-                  className={`square ${isLight ? 'light' : 'dark'} ${piece ? 'has-piece' : ''} ${hasAttackers ? 'attacked' : ''} ${lowContrast ? 'low-contrast' : ''}`}
-                  style={squareStyle}
+                  className={`square ${isLight ? 'light' : 'dark'} ${piece ? 'has-piece' : ''} ${hasAttackers ? 'attacked' : ''} ${lowContrast ? 'low-contrast' : ''} ${isContested ? 'contested' : ''}`}
+                  style={hasSquareStyle ? squareStyle : undefined}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, rowIdx, colIdx)}
                   onContextMenu={(e) => handleContextMenu(e, rowIdx, colIdx)}
@@ -309,7 +319,15 @@ const ChessBoard = memo(function ChessBoard({
                     </div>
                   )}
                   
-                  {showAttackCounts && totalAttackers > 0 && (
+                  {/* Contested square indicators */}
+                  {isContested && (
+                    <>
+                      <div className="contested-count top">{blackAttackers}</div>
+                      <div className="contested-count bottom">{whiteAttackers}</div>
+                    </>
+                  )}
+                  
+                  {showAttackCounts && totalAttackers > 0 && !isContested && (
                     <div className="attack-count">{totalAttackers}</div>
                   )}
                 </div>

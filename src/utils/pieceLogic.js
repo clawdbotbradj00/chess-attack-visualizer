@@ -58,6 +58,46 @@ function isOnBoard(row, col) {
   return row >= 0 && row < 8 && col >= 0 && col < 8
 }
 
+// Get squares a piece can MOVE to (different from attack for pawns)
+export function getMoveSquares(piece, row, col, board = null) {
+  // For most pieces, move squares = attack squares
+  if (piece.type !== PIECE_TYPES.PAWN) {
+    return getAttackedSquares(piece, row, col, board)
+  }
+  
+  // Pawns move forward, not diagonally
+  const moves = []
+  const direction = piece.color === 'white' ? -1 : 1
+  const startRow = piece.color === 'white' ? 6 : 1
+  
+  // One square forward
+  const oneForward = row + direction
+  if (isOnBoard(oneForward, col) && (!board || !board[oneForward][col])) {
+    moves.push([oneForward, col])
+    
+    // Two squares forward from starting position
+    if (row === startRow) {
+      const twoForward = row + (direction * 2)
+      if (isOnBoard(twoForward, col) && (!board || !board[twoForward][col])) {
+        moves.push([twoForward, col])
+      }
+    }
+  }
+  
+  // Also include diagonal captures as potential moves
+  const captures = [
+    [row + direction, col - 1],
+    [row + direction, col + 1],
+  ]
+  for (const [nr, nc] of captures) {
+    if (isOnBoard(nr, nc)) {
+      moves.push([nr, nc])
+    }
+  }
+  
+  return moves
+}
+
 // Get all squares attacked by a piece at a given position
 // board parameter is optional - if provided, blocking is calculated
 export function getAttackedSquares(piece, row, col, board = null) {
@@ -215,14 +255,13 @@ export function calculateAttacksWithDepth(board, maxDepth = 1) {
   
   if (maxDepth < 2) return attacks
   
-  // Depth 2: If piece moves to any of its attack squares, what else could it hit?
-  // Note: For depth 2+, we don't calculate blocking since the board state would change
+  // Depth 2: If piece moves to any of its MOVE squares, what could it attack?
+  // Use getMoveSquares for where piece can go, getAttackedSquares for what it attacks
   for (const { piece, row, col, idx } of pieces) {
-    const currentAttacks = getAttackedSquares(piece, row, col, board)
+    const possibleMoves = getMoveSquares(piece, row, col, board)
     
-    for (const [moveRow, moveCol] of currentAttacks) {
+    for (const [moveRow, moveCol] of possibleMoves) {
       // From this potential position, where could the piece attack?
-      // Don't pass board here since we're hypothetically moving
       const futureAttacks = getAttackedSquares(piece, moveRow, moveCol)
       
       for (const [ar, ac] of futureAttacks) {
@@ -239,15 +278,15 @@ export function calculateAttacksWithDepth(board, maxDepth = 1) {
   
   // Depth 3: One more level deep
   for (const { piece, row, col, idx } of pieces) {
-    const currentAttacks = getAttackedSquares(piece, row, col, board)
+    const possibleMoves1 = getMoveSquares(piece, row, col, board)
     
-    for (const [moveRow1, moveCol1] of currentAttacks) {
-      const level2Attacks = getAttackedSquares(piece, moveRow1, moveCol1)
+    for (const [moveRow1, moveCol1] of possibleMoves1) {
+      const possibleMoves2 = getMoveSquares(piece, moveRow1, moveCol1)
       
-      for (const [moveRow2, moveCol2] of level2Attacks) {
-        const level3Attacks = getAttackedSquares(piece, moveRow2, moveCol2)
+      for (const [moveRow2, moveCol2] of possibleMoves2) {
+        const futureAttacks = getAttackedSquares(piece, moveRow2, moveCol2)
         
-        for (const [ar, ac] of level3Attacks) {
+        for (const [ar, ac] of futureAttacks) {
           if (!attacks[ar][ac].depth1.includes(idx) && 
               !attacks[ar][ac].depth2.includes(idx) &&
               !attacks[ar][ac].depth3.includes(idx)) {

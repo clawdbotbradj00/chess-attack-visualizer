@@ -150,23 +150,43 @@ const ChessBoard = memo(function ChessBoard({
     return items.filter(item => selectedPieces.has(item.idx))
   }
 
+  // Get raw (unfiltered) attackers for contested calculation
+  const getRawAttackers = (rowIdx, colIdx) => {
+    const cell = attacks[rowIdx]?.[colIdx]
+    if (!cell) return []
+    
+    if (Array.isArray(cell)) {
+      return cell.map(idx => ({ idx, color: 'white' }))
+    }
+    
+    if (cell.attackers && !cell.depth1) {
+      return cell.attackers || []
+    }
+    
+    // New format with depth - get depth1 attackers
+    return cell.depth1?.attackers || []
+  }
+
   // Get attackers and defenders for a square across depths
   const getSquareInfo = (rowIdx, colIdx) => {
     const cell = attacks[rowIdx]?.[colIdx]
-    if (!cell) return { attackers: [], defenders: [], byDepth: {} }
+    if (!cell) return { attackers: [], defenders: [], byDepth: {}, rawAttackers: [] }
+    
+    // Get raw attackers for contested calculation (unfiltered)
+    const rawAttackers = getRawAttackers(rowIdx, colIdx)
     
     // Handle old array format (backwards compat) - convert to new format
     if (Array.isArray(cell)) {
       const filtered = cell.filter(idx => !selectedOnly || selectedPieces.size === 0 || selectedPieces.has(idx))
         .map(idx => ({ idx, color: 'white' })) // assume white for old format
-      return { attackers: filtered, defenders: [], byDepth: { 1: { attackers: filtered, defenders: [] } } }
+      return { attackers: filtered, defenders: [], byDepth: { 1: { attackers: filtered, defenders: [] } }, rawAttackers }
     }
     
     // Handle new format with attackers/defenders (non-depth)
     if (cell.attackers && !cell.depth1) {
       const attackers = filterBySelection(cell.attackers)
       const defenders = filterBySelection(cell.defenders)
-      return { attackers, defenders, byDepth: { 1: { attackers, defenders } } }
+      return { attackers, defenders, byDepth: { 1: { attackers, defenders } }, rawAttackers }
     }
     
     // New format with depth
@@ -192,7 +212,7 @@ const ChessBoard = memo(function ChessBoard({
       allAttackers = [...allAttackers, ...attackers]
     }
     
-    return { attackers: allAttackers, defenders: allDefenders, byDepth }
+    return { attackers: allAttackers, defenders: allDefenders, byDepth, rawAttackers }
   }
 
   return (
@@ -215,7 +235,7 @@ const ChessBoard = memo(function ChessBoard({
           {board.map((row, rowIdx) => (
             row.map((piece, colIdx) => {
               const isLight = (rowIdx + colIdx) % 2 === 0
-              const { attackers, defenders, byDepth } = getSquareInfo(rowIdx, colIdx)
+              const { attackers, defenders, byDepth, rawAttackers } = getSquareInfo(rowIdx, colIdx)
               const hasAttackers = attackers.length > 0
               const hasDefenders = defenders.length > 0
               const pieceColor = getPieceColor(piece)
@@ -227,10 +247,10 @@ const ChessBoard = memo(function ChessBoard({
               const depth3Attackers = byDepth[3]?.attackers?.length || 0
               const totalAttackers = depth1Attackers + depth2Attackers + depth3Attackers
               
-              // Count white and black attackers separately
-              const whiteAttackers = attackers.filter(a => a.color === 'white').length
-              const blackAttackers = attackers.filter(a => a.color === 'black').length
-              const isContested = whiteAttackers > 0 && blackAttackers > 0
+              // Count white and black attackers from RAW (unfiltered) data for contested
+              const rawWhiteAttackers = rawAttackers.filter(a => a.color === 'white').length
+              const rawBlackAttackers = rawAttackers.filter(a => a.color === 'black').length
+              const isContested = rawWhiteAttackers > 0 && rawBlackAttackers > 0
               
               // Check if all depth1 attackers are black
               const allDepth1Black = depth1Attackers > 0 && depth1AttackersList.every(a => a.color === 'black')
@@ -319,11 +339,11 @@ const ChessBoard = memo(function ChessBoard({
                     </div>
                   )}
                   
-                  {/* Contested square indicators */}
+                  {/* Contested square indicators - always show from raw data */}
                   {isContested && (
                     <>
-                      <div className="contested-count top">{blackAttackers}</div>
-                      <div className="contested-count bottom">{whiteAttackers}</div>
+                      <div className="contested-count top">{rawBlackAttackers}</div>
+                      <div className="contested-count bottom">{rawWhiteAttackers}</div>
                     </>
                   )}
                   
